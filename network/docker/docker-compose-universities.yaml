@@ -1,0 +1,240 @@
+version: '3.7'
+
+volumes:
+  orderer.universities.com:
+  peer0.uned.universities.com:
+  peer1.uoc.universities.com:
+  peer2.viu.universities.com:
+
+networks:
+  net:
+    name: universities_network
+
+services:
+  orderer.universities.com:
+    container_name: orderer.universities.com
+    image: hyperledger/fabric-orderer:2.3.3
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_GENERAL_BOOTSTRAPMETHOD=none
+      - ORDERER_CHANNELPARTICIPATION_ENABLED=true
+      - ORDERER_ADMIN_TLS_ENABLED=true
+      - ORDERER_ADMIN_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_ADMIN_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
+      - ORDERER_OPERATIONS_LISTENADDRESS=0.0.0.0:17050
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: orderer
+    volumes:
+        - ../system-genesis-block/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+        - ../organizations/ordererOrganizations/universities.com/orderers/orderer.universities.com/msp:/var/hyperledger/orderer/msp
+        - ../organizations/ordererOrganizations/universities.com/orderers/orderer.universities.com/tls/:/var/hyperledger/orderer/tls
+        - orderer.universities.com:/var/hyperledger/production/orderer
+    ports:
+      - 7050:7050
+      - 7053:7053
+      - 17050:17050
+    networks:
+      - net
+
+  couchdb_uned:
+    container_name: couchdb_uned
+    image: couchdb:3.1.1
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "5984:5984"
+    networks:
+      - net
+
+  peer0.uned.universities.com:
+    container_name: peer0.uned.universities.com
+    image: hyperledger/fabric-peer:2.3.3
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=universities_network
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_ID=peer0.uned.universities.com
+      - CORE_PEER_ADDRESS=peer0.uned.universities.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_CHAINCODEADDRESS=peer0.uned.universities.com:7052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.uned.universities.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.uned.universities.com:7051
+      - CORE_PEER_LOCALMSPID=unedMSP
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:17051
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb_uned:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    volumes:
+        - /var/run/docker.sock:/host/var/run/docker.sock
+        - ../organizations/peerOrganizations/uned.universities.com/peers/peer0.uned.universities.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/uned.universities.com/peers/peer0.uned.universities.com/tls:/etc/hyperledger/fabric/tls
+        - peer0.uned.universities.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 7051:7051
+      - 17051:17051
+    networks:
+      - net
+    depends_on:
+      - couchdb_uned
+
+  couchdb_uoc:
+    container_name: couchdb_uoc
+    image: couchdb:3.1.1
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "7984:5984"
+    networks:
+      - net
+
+  peer1.uoc.universities.com:
+    container_name: peer1.uoc.universities.com
+    image: hyperledger/fabric-peer:2.3.3
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=universities_network
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_ID=peer1.uoc.universities.com
+      - CORE_PEER_ADDRESS=peer1.uoc.universities.com:9051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:9051
+      - CORE_PEER_CHAINCODEADDRESS=peer1.uoc.universities.com:9052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:9052
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.uoc.universities.com:9051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer1.uoc.universities.com:9051
+      - CORE_PEER_LOCALMSPID=uocMSP
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:19051
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb_uoc:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    volumes:
+        - /var/run/docker.sock:/host/var/run/docker.sock
+        - ../organizations/peerOrganizations/uoc.universities.com/peers/peer1.uoc.universities.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/uoc.universities.com/peers/peer1.uoc.universities.com/tls:/etc/hyperledger/fabric/tls
+        - peer1.uoc.universities.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 9051:9051
+      - 19051:19051
+    networks:
+      - net
+    depends_on:
+      - couchdb_uoc
+
+  couchdb_viu:
+    container_name: couchdb_viu
+    image: couchdb:3.1.1
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    ports:
+      - "9984:5984"
+    networks:
+      - net
+
+  peer2.viu.universities.com:
+    container_name: peer2.viu.universities.com
+    image: hyperledger/fabric-peer:2.3.3
+    labels:
+      service: hyperledger-fabric
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=universities_network
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=false
+      - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
+      - CORE_PEER_ID=peer2.viu.universities.com
+      - CORE_PEER_ADDRESS=peer2.viu.universities.com:2051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:2051
+      - CORE_PEER_CHAINCODEADDRESS=peer2.viu.universities.com:2052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:2052
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer2.viu.universities.com:2051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer2.viu.universities.com:2051
+      - CORE_PEER_LOCALMSPID=viuMSP
+      - CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:12051
+      - CORE_LEDGER_STATE_STATEDATABASE=CouchDB
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb_viu:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw
+    volumes:
+        - /var/run/docker.sock:/host/var/run/docker.sock
+        - ../organizations/peerOrganizations/viu.universities.com/peers/peer2.viu.universities.com/msp:/etc/hyperledger/fabric/msp
+        - ../organizations/peerOrganizations/viu.universities.com/peers/peer2.viu.universities.com/tls:/etc/hyperledger/fabric/tls
+        - peer2.viu.universities.com:/var/hyperledger/production
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start
+    ports:
+      - 2051:2051
+      - 12051:12051
+    networks:
+      - net
+    depends_on:
+      - couchdb_viu
+
+  cli:
+    container_name: cli
+    image: hyperledger/fabric-tools:latest
+    labels:
+      service: hyperledger-fabric
+    tty: true
+    stdin_open: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - FABRIC_LOGGING_SPEC=INFO
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - ../organizations:/opt/gopath/src/github.com/hyperledger/fabric/peer/organizations
+    depends_on:
+      - peer0.uned.universities.com
+      - peer1.uoc.universities.com
+      - peer2.viu.universities.com
+    networks:
+      - net

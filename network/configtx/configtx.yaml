@@ -1,0 +1,183 @@
+---
+################################################################################
+#   Section: Organizations
+################################################################################
+Organizations:
+  - &OrdererOrg
+    Name: OrdererOrg
+    ID: OrdererMSP
+    MSPDir: ../organizations/ordererOrganizations/universities.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Writers:
+        Type: Signature
+        Rule: "OR('OrdererMSP.member')"
+      Admins:
+        Type: Signature
+        Rule: "OR('OrdererMSP.admin')"
+
+    OrdererEndpoints:
+      - orderer.universities.com:7050
+
+  - &uned
+    Name: unedMSP
+    ID: unedMSP
+
+    MSPDir: ../organizations/peerOrganizations/uned.universities.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('unedMSP.admin', 'unedMSP.peer', 'unedMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('unedMSP.admin', 'unedMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('unedMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('unedMSP.peer')"
+
+  - &uoc
+    Name: uocMSP
+    ID: uocMSP
+
+    MSPDir: ../organizations/peerOrganizations/uoc.universities.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('uocMSP.admin', 'uocMSP.peer', 'uocMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('uocMSP.admin', 'uocMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('uocMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('uocMSP.peer')"
+
+  - &viu
+    Name: viuMSP
+    ID: viuMSP
+    MSPDir: ../organizations/peerOrganizations/viu.universities.com/msp
+    Policies:
+      Readers:
+        Type: Signature
+        Rule: "OR('viuMSP.admin', 'viuMSP.peer', 'viuMSP.client')"
+      Writers:
+        Type: Signature
+        Rule: "OR('viuMSP.admin', 'viuMSP.client')"
+      Admins:
+        Type: Signature
+        Rule: "OR('viuMSP.admin')"
+      Endorsement:
+        Type: Signature
+        Rule: "OR('viuMSP.peer')"
+
+################################################################################
+#   SECTION: Capabilities
+################################################################################
+Capabilities:
+  Channel: &ChannelCapabilities
+    V2_0: true
+  orderer: &OrdererCapabilities
+    V2_0: true
+  Application: &ApplicationCapabilities
+    V2_0: true
+
+################################################################################
+#   SECTION: Application
+################################################################################
+Application: &ApplicationDefaults
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    LifecycleEndorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+    Endorsement:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Endorsement"
+
+  Capabilities:
+    <<: *ApplicationCapabilities
+################################################################################
+#   SECTION: orderer
+################################################################################
+orderer: &OrdererDefaults
+  OrdererType: etcdraft
+  Addresses:
+    - orderer.universities.com:7050
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.universities.com
+        Port: 7050
+        ClientTLSCert: ../organizations/ordererOrganizations/universities.com/orderers/orderer.universities.com/tls/server.crt
+        ServerTLSCert: ../organizations/ordererOrganizations/universities.com/orderers/orderer.universities.com/tls/server.crt
+
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Organizations:
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+    BlockValidation:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+
+################################################################################
+#   CHANNEL
+################################################################################
+Channel: &ChannelDefaults
+  Policies:
+    Readers:
+      Type: ImplicitMeta
+      Rule: "ANY Readers"
+    Writers:
+      Type: ImplicitMeta
+      Rule: "ANY Writers"
+    Admins:
+      Type: ImplicitMeta
+      Rule: "MAJORITY Admins"
+  Capabilities:
+    <<: *ChannelCapabilities
+
+################################################################################
+#   Profile
+################################################################################
+Profiles:
+  ChannelsGenesis:
+    <<: *ChannelDefaults
+    orderer:
+      <<: *OrdererDefaults
+      Organizations:
+        - *OrdererOrg
+      Capabilities: *OrdererCapabilities
+    Application:
+      <<: *ApplicationDefaults
+      Organizations:
+        - *uned
+        - *uoc
+        - *viu
+      Capabilities: *ApplicationCapabilities
