@@ -1,0 +1,9 @@
+{
+  "network-configs": {
+    "uninet-network": {
+      "name": "Uninet Network",
+      "profile": "./connection-profile/uninet-network.json"
+    }
+  },
+  "license": "Apache-2.0"
+}

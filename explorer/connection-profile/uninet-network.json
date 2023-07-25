@@ -1,0 +1,48 @@
+{
+  "name": "uninet-network",
+  "version": "1.0.0",
+  "client": {
+    "tlsEnable": true,
+    "adminCredential": {
+      "id": "exploreradmin",
+      "password": "exploreradminpw"
+    },
+    "enableAuthentication": true,
+    "organization": "unedMSP",
+    "connection": {
+      "timeout": {
+        "peer": {
+          "endorser": "300"
+        },
+        "orderer": "300"
+      }
+    }
+  },
+  "channels": {
+    "degreeschannel": {
+      "peers": {
+        "peer0.uned.universities.com": {}
+      }
+    }
+  },
+  "organizations": {
+    "unedMSP": {
+      "mspid": "unedMSP",
+      "adminPrivateKey": {
+        "path": "/tmp/crypto/peerOrganizations/uned.universities.com/users/User1@uned.universities.com/msp/keystore/priv_sk"
+      },
+      "peers": ["peer0.uned.universities.com"],
+      "signedCert": {
+        "path": "/tmp/crypto/peerOrganizations/uned.universities.com/users/User1@uned.universities.com/msp/signcerts/cert.pem"
+      }
+    }
+  },
+  "peers": {
+    "peer0.uned.universities.com": {
+      "tlsCACerts": {
+        "path": "/tmp/crypto/peerOrganizations/uned.universities.com/peers/peer0.uned.universities.com/tls/ca.crt"
+      },
+      "url": "grpcs://peer0.uned.universities.com:7051"
+    }
+  }
+}
